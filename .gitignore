@@ -1,0 +1,49 @@
+# Binaries for programs and plugins
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Output of build process
+/build/
+*.out
+*.o
+*.a
+*.lo
+*.la
+
+# Folders
+bin/
+
+# Vendor folder
+vendor/
+
+# Dependency directories (Go modules)
+/pkg
+
+# Logs
+*.log
+
+# IDE and editor specific files
+.idea/
+.vscode/
+*.swp
+*~
+
+# Docker specific files
+*.tar
+
+# Ignore .env files
+.env
+
+# Git specific files
+.DS_Store
+.git/
+
+# Executable
+otel-test-daemon
+
+# Temporary files
+*.tmp
+*.temp
+
