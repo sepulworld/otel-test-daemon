@@ -19,7 +19,7 @@ FROM debian:bullseye-slim
 WORKDIR /root/
 
 # Copy the Pre-built binary file from the previous stage
-COPY --from=builder /app/otel-test-daemon .
+COPY --from=builder /go/otel-test-daemon .
 
 # Command to run the executable
 CMD ["./otel-test-daemon"]
