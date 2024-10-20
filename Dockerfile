@@ -21,8 +21,20 @@ WORKDIR /root/
 # Copy the Pre-built binary file from the previous stage
 COPY --from=builder /go/otel-test-daemon .
 
-# Command to run the executable
-CMD ["./otel-test-daemon"]
+# Define default values for command-line arguments
+ARG DATADOG_RECEIVER="169.254.1.1:8126"
+ARG HTTP_RECEIVER="169.254.1.1:4318"
+ARG SYSLOG_RECEIVER="169.254.1.1:51893"
+ARG STATSD_RECEIVER="169.254.1.1:9126"
+
+# Set environment variables from the arguments
+ENV DATADOG_RECEIVER=${DATADOG_RECEIVER}
+ENV HTTP_RECEIVER=${HTTP_RECEIVER}
+ENV SYSLOG_RECEIVER=${SYSLOG_RECEIVER}
+ENV STATSD_RECEIVER=${STATSD_RECEIVER}
+
+# Command to run the executable with environment variables as arguments
+CMD ["./otel-test-daemon", "-datadog-receiver=${DATADOG_RECEIVER}", "-http-receiver=${HTTP_RECEIVER}", "-syslog-receiver=${SYSLOG_RECEIVER}", "-statsd-receiver=${STATSD_RECEIVER}"]
 
 # Expose necessary ports
 EXPOSE 4318 8126 51893 9126
