@@ -1,3 +1,6 @@
+# Use the official Golang image as the base image for the build stage
+FROM golang:1.23 as builder
+
 COPY go.mod go.sum ./
 
 # Download dependencies
