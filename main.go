@@ -82,7 +82,6 @@ func main() {
 	}
 	defer statsdClient.Close()
 
-	// Setup Datadog client
 	datadogClient, err := datadogstatsd.New(*datadogReceiver, datadogstatsd.WithNamespace("otel-test-daemon"))
 	if err != nil {
 		log.Fatalf("Failed to create Datadog client: %v", err)
