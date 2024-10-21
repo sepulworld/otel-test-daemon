@@ -30,6 +30,8 @@ var (
 )
 
 func main() {
+	flag.Parse()
+
 	// Run as a daemon
 	go func() {
 		log.Println("Daemon started")
@@ -91,20 +93,27 @@ func main() {
 	go func() {
 		for {
 			// Send a trace
-			sendTestTrace(tracer)
+			if err := sendTestTrace(tracer); err != nil {
+				log.Printf("Failed to send trace: %v", err)
+			}
 
 			// Send a metric
-			counter.Add(context.Background(), rand.Float64(),
-				metrictype.WithAttributes(attribute.String("endpoint", *httpReceiver)))
+			if err := sendTestMetric(counter); err != nil {
+				log.Printf("Failed to send metric: %v", err)
+			}
 
 			// Simulate log generation
 			log.Println("Sending test log to syslog receiver", *syslogReceiver)
 
 			// Send StatsD metric
-			sendTestStatsdMetric(statsdClient)
+			if err := sendTestStatsdMetric(statsdClient); err != nil {
+				log.Printf("Failed to send StatsD metric: %v", err)
+			}
 
 			// Send Datadog metric
-			sendTestDatadogMetric(datadogClient)
+			if err := sendTestDatadogMetric(datadogClient); err != nil {
+				log.Printf("Failed to send Datadog metric: %v", err)
+			}
 
 			// Wait for 5 seconds before sending the next batch of test data
 			time.Sleep(5 * time.Second)
@@ -115,7 +124,7 @@ func main() {
 	select {}
 }
 
-func sendTestTrace(tracer trace.Tracer) {
+func sendTestTrace(tracer trace.Tracer) error {
 	_, span := tracer.Start(context.Background(), "TestSpan")
 	defer span.End()
 	span.SetAttributes(
@@ -123,22 +132,30 @@ func sendTestTrace(tracer trace.Tracer) {
 		attribute.Float64("test.value", rand.Float64()),
 	)
 	log.Println("Test trace sent to HTTP receiver", *httpReceiver)
+	return nil
 }
 
-func sendTestStatsdMetric(client cactusstatsd.Statter) {
+func sendTestMetric(counter metrictype.Float64Counter) error {
+	counter.Add(context.Background(), rand.Float64(),
+		metrictype.WithAttributes(attribute.String("endpoint", *httpReceiver)))
+	log.Println("Test metric sent to HTTP receiver", *httpReceiver)
+	return nil
+}
+
+func sendTestStatsdMetric(client cactusstatsd.Statter) error {
 	err := client.Gauge("test_gauge", int64(rand.Intn(100)), 1.0)
 	if err != nil {
-		log.Printf("Failed to send StatsD metric: %v", err)
-	} else {
-		log.Println("Test StatsD metric sent to receiver", *statsdReceiver)
+		return err
 	}
+	log.Println("Test StatsD metric sent to receiver", *statsdReceiver)
+	return nil
 }
 
-func sendTestDatadogMetric(client *datadogstatsd.Client) {
+func sendTestDatadogMetric(client *datadogstatsd.Client) error {
 	err := client.Gauge("test.datadog.gauge", rand.Float64()*100, []string{"environment:test"}, 1.0)
 	if err != nil {
-		log.Printf("Failed to send Datadog metric: %v", err)
-	} else {
-		log.Println("Test Datadog metric sent to receiver", *datadogReceiver)
+		return err
 	}
+	log.Println("Test Datadog metric sent to receiver", *datadogReceiver)
+	return nil
 }
