@@ -48,7 +48,7 @@ func main() {
 	if !isPortOpen(*httpReceiver) {
 		log.Fatalf("HTTP receiver port is not open: %s", *httpReceiver)
 	}
-	traceExporter, err := otlptracehttp.New(context.Background(), otlptracehttp.WithEndpoint(*httpReceiver))
+	traceExporter, err := otlptracehttp.New(context.Background(), otlptracehttp.WithEndpoint(*httpReceiver), otlptracehttp.WithInsecure())
 	if err != nil {
 		log.Fatalf("Failed to create trace exporter: %v", err)
 	}
