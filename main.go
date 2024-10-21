@@ -26,7 +26,7 @@ import (
 var (
 	datadogReceiver = flag.String("datadog-receiver", "127.0.0.1:8126", "Datadog receiver endpoint")
 	httpReceiver    = flag.String("http-receiver", "127.0.0.1:4318", "OpenTelemetry HTTP receiver endpoint")
-	syslogReceiver  = flag.String("syslog-receiver", "127.0.0.1:51893", "Syslog receiver endpoint")
+	syslogReceiver  = flag.String("syslog-receiver", "127.0.0.1:51898", "Syslog receiver endpoint")
 	statsdReceiver  = flag.String("statsd-receiver", "127.0.0.1:9126", "StatsD receiver endpoint")
 )
 
@@ -110,6 +110,11 @@ func main() {
 
 			// Simulate log generation
 			log.Println("Sending test log to syslog receiver", *syslogReceiver)
+			hostname, err := os.Hostname()
+			if err != nil {
+				hostname = "localhost"
+			}
+			sendTestSyslog(*syslogReceiver, "<14>1 "+time.Now().Format(time.RFC3339)+" "+hostname+" otel-test-daemon - - Test syslog message")
 
 			// Send StatsD metric
 			if err := sendTestStatsdMetric(statsdClient); err != nil {
@@ -164,6 +169,17 @@ func sendTestDatadogMetric(client *datadogstatsd.Client) error {
 	}
 	log.Println("Test Datadog metric sent to receiver", *datadogReceiver)
 	return nil
+}
+
+func sendTestSyslog(address, message string) {
+	conn, err := net.Dial("udp", address)
+	if err != nil {
+		log.Printf("Failed to send test syslog message: %v", err)
+		return
+	}
+	defer conn.Close()
+	_, _ = conn.Write([]byte(message))
+	log.Println("Test syslog message sent to receiver", address)
 }
 
 func isPortOpen(address string) bool {
