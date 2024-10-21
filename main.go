@@ -79,10 +79,6 @@ func main() {
 		log.Fatalf("Failed to create counter metric: %v", err)
 	}
 
-	// Setup StatsD client
-	if !isPortOpen(*statsdReceiver) {
-		log.Fatalf("StatsD receiver port is not open: %s", *statsdReceiver)
-	}
 	statsdClient, err := cactusstatsd.NewBufferedClient(*statsdReceiver, "otel-test-daemon", 300*time.Millisecond, 0)
 	if err != nil {
 		log.Fatalf("Failed to create StatsD client: %v", err)
