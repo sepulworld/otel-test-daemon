@@ -23,10 +23,10 @@ import (
 )
 
 var (
-	datadogReceiver = flag.String("datadog-receiver", "169.254.1.1:8126", "Datadog receiver endpoint")
-	httpReceiver    = flag.String("http-receiver", "169.254.1.1:4318", "OpenTelemetry HTTP receiver endpoint")
-	syslogReceiver  = flag.String("syslog-receiver", "169.254.1.1:51893", "Syslog receiver endpoint")
-	statsdReceiver  = flag.String("statsd-receiver", "169.254.1.1:9126", "StatsD receiver endpoint")
+	datadogReceiver = flag.String("datadog-receiver", "127.0.0.1:8126", "Datadog receiver endpoint")
+	httpReceiver    = flag.String("http-receiver", "127.0.0.1:4318", "OpenTelemetry HTTP receiver endpoint")
+	syslogReceiver  = flag.String("syslog-receiver", "127.0.0.1:51893", "Syslog receiver endpoint")
+	statsdReceiver  = flag.String("statsd-receiver", "127.0.0.1:9126", "StatsD receiver endpoint")
 )
 
 func main() {
@@ -76,7 +76,7 @@ func main() {
 	}
 
 	// Setup StatsD client
-	statsdClient, err := cactusstatsd.NewBufferedClient("udp://"+*statsdReceiver, "otel-test-daemon", 300*time.Millisecond, 0)
+	statsdClient, err := cactusstatsd.NewBufferedClient(*statsdReceiver, "otel-test-daemon", 300*time.Millisecond, 0)
 	if err != nil {
 		log.Fatalf("Failed to create StatsD client: %v", err)
 	}
