@@ -12,8 +12,8 @@ COPY . .
 # Build the Go app
 RUN go build -o otel-test-daemon
 
-# Use a minimal Docker image to package the built binary
-FROM debian:bullseye-slim
+# Use the same Golang base image for the runtime to ensure compatibility
+FROM golang:1.23
 
 # Set the Current Working Directory inside the container
 WORKDIR /root/
