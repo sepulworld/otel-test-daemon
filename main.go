@@ -143,11 +143,18 @@ func sendTestMetric(counter metrictype.Float64Counter) error {
 }
 
 func sendTestStatsdMetric(client cactusstatsd.Statter) error {
-	err := client.Gauge("test_gauge", int64(rand.Intn(100)), 1.0)
+	tcpClient, err := cactusstatsd.NewClient(*statsdReceiver, "otel-test-daemon")
 	if err != nil {
 		return err
 	}
-	log.Println("Test StatsD metric sent to receiver", *statsdReceiver)
+	defer tcpClient.Close()
+
+	// Send the metric using the TCP client
+	err = tcpClient.Gauge("test_gauge", int64(rand.Intn(100)), 1.0)
+	if err != nil {
+		return err
+	}
+	log.Println("Test StatsD metric sent to receiver via TCP", *statsdReceiver)
 	return nil
 }
 
