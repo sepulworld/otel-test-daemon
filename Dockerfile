@@ -35,6 +35,3 @@ ENV STATSD_RECEIVER=${STATSD_RECEIVER}
 
 # Command to run the executable with environment variables as arguments
 CMD ["./otel-test-daemon", "-datadog-receiver=${DATADOG_RECEIVER}", "-http-receiver=${HTTP_RECEIVER}", "-syslog-receiver=${SYSLOG_RECEIVER}", "-statsd-receiver=${STATSD_RECEIVER}"]
-
-# Expose necessary ports
-EXPOSE 4318 8126 51893 9126
