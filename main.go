@@ -76,7 +76,7 @@ func main() {
 	}
 
 	// Setup StatsD client
-	statsdClient, err := cactusstatsd.NewBufferedClient(*statsdReceiver, "otel-test-daemon", 300*time.Millisecond, 0)
+	statsdClient, err := cactusstatsd.NewBufferedClient("udp://"+*statsdReceiver, "otel-test-daemon", 300*time.Millisecond, 0)
 	if err != nil {
 		log.Fatalf("Failed to create StatsD client: %v", err)
 	}
