@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log"
 	"math/rand"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -44,6 +45,9 @@ func main() {
 	}()
 
 	// Setup OpenTelemetry Tracer
+	if !isPortOpen(*httpReceiver) {
+		log.Fatalf("HTTP receiver port is not open: %s", *httpReceiver)
+	}
 	traceExporter, err := otlptracehttp.New(context.Background(), otlptracehttp.WithEndpoint(*httpReceiver))
 	if err != nil {
 		log.Fatalf("Failed to create trace exporter: %v", err)
@@ -76,12 +80,19 @@ func main() {
 	}
 
 	// Setup StatsD client
+	if !isPortOpen(*statsdReceiver) {
+		log.Fatalf("StatsD receiver port is not open: %s", *statsdReceiver)
+	}
 	statsdClient, err := cactusstatsd.NewBufferedClient(*statsdReceiver, "otel-test-daemon", 300*time.Millisecond, 0)
 	if err != nil {
 		log.Fatalf("Failed to create StatsD client: %v", err)
 	}
 	defer statsdClient.Close()
 
+	// Setup Datadog client
+	if !isPortOpen(*datadogReceiver) {
+		log.Fatalf("Datadog receiver port is not open: %s", *datadogReceiver)
+	}
 	datadogClient, err := datadogstatsd.New(*datadogReceiver, datadogstatsd.WithNamespace("otel-test-daemon"))
 	if err != nil {
 		log.Fatalf("Failed to create Datadog client: %v", err)
@@ -142,18 +153,11 @@ func sendTestMetric(counter metrictype.Float64Counter) error {
 }
 
 func sendTestStatsdMetric(client cactusstatsd.Statter) error {
-	tcpClient, err := cactusstatsd.NewClient(*statsdReceiver, "otel-test-daemon")
+	err := client.Gauge("test_gauge", int64(rand.Intn(100)), 1.0)
 	if err != nil {
 		return err
 	}
-	defer tcpClient.Close()
-
-	// Send the metric using the TCP client
-	err = tcpClient.Gauge("test_gauge", int64(rand.Intn(100)), 1.0)
-	if err != nil {
-		return err
-	}
-	log.Println("Test StatsD metric sent to receiver via TCP", *statsdReceiver)
+	log.Println("Test StatsD metric sent to receiver", *statsdReceiver)
 	return nil
 }
 
@@ -164,4 +168,13 @@ func sendTestDatadogMetric(client *datadogstatsd.Client) error {
 	}
 	log.Println("Test Datadog metric sent to receiver", *datadogReceiver)
 	return nil
+}
+
+func isPortOpen(address string) bool {
+	conn, err := net.DialTimeout("tcp", address, 2*time.Second)
+	if err != nil {
+		return false
+	}
+	_ = conn.Close()
+	return true
 }
