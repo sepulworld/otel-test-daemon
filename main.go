@@ -175,7 +175,7 @@ func sendSyslogMessage(address string) error {
 	}
 	defer conn.Close()
 
-	message := fmt.Sprintf("<34>1 %s otel-test-daemon 1234 - [exampleSDID@32473 iut=\"3\" eventSource=\"Application\"] Test syslog message",
+	message := fmt.Sprintf("<34>1 %s otel-test-daemon 1234 - - - Test syslog message",
 		time.Now().Format(time.RFC3339))
 	_, err = fmt.Fprintln(conn, message)
 	if err != nil {
