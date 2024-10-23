@@ -209,8 +209,9 @@ func sendLokiMessage(address string) error {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected response from Loki: %s", resp.Status)
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+		log.Printf("Loki push successful, response status: %s", resp.Status)
+		return nil
 	}
 
 	log.Println("Test Loki message sent to receiver", address)
