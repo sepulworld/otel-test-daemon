@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"math/rand"
 	"net"
@@ -36,7 +37,6 @@ func main() {
 	// Run as a daemon
 	go func() {
 		log.Println("Daemon started")
-		// Capture system interrupts to gracefully shutdown
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 		<-c
@@ -109,12 +109,9 @@ func main() {
 			}
 
 			// Simulate log generation
-			log.Println("Sending test log to syslog receiver", *syslogReceiver)
-			hostname, err := os.Hostname()
-			if err != nil {
-				hostname = "localhost"
+			if err := sendSyslogMessage(*syslogReceiver); err != nil {
+				log.Printf("Failed to send syslog message: %v", err)
 			}
-			sendTestSyslog(*syslogReceiver, "<14>1 "+time.Now().Format(time.RFC3339)+" "+hostname+" otel-test-daemon - - Test syslog message")
 
 			// Send StatsD metric
 			if err := sendTestStatsdMetric(statsdClient); err != nil {
@@ -171,15 +168,21 @@ func sendTestDatadogMetric(client *datadogstatsd.Client) error {
 	return nil
 }
 
-func sendTestSyslog(address, message string) {
-	conn, err := net.Dial("udp", address)
+func sendSyslogMessage(address string) error {
+	conn, err := net.Dial("tcp", address)
 	if err != nil {
-		log.Printf("Failed to send test syslog message: %v", err)
-		return
+		return fmt.Errorf("failed to connect to syslog receiver: %w", err)
 	}
 	defer conn.Close()
-	_, _ = conn.Write([]byte(message))
+
+	message := fmt.Sprintf("<34>1 %s otel-test-daemon 1234 - [exampleSDID@32473 iut=\"3\" eventSource=\"Application\"] Test syslog message",
+		time.Now().Format(time.RFC3339))
+	_, err = fmt.Fprintln(conn, message)
+	if err != nil {
+		return fmt.Errorf("failed to send syslog message: %w", err)
+	}
 	log.Println("Test syslog message sent to receiver", address)
+	return nil
 }
 
 func isPortOpen(address string) bool {
