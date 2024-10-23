@@ -27,7 +27,7 @@ import (
 var (
 	datadogReceiver = flag.String("datadog-receiver", "127.0.0.1:8126", "Datadog receiver endpoint")
 	httpReceiver    = flag.String("http-receiver", "127.0.0.1:4318", "OpenTelemetry HTTP receiver endpoint")
-	syslogReceiver  = flag.String("syslog-receiver", "127.0.0.1:51898", "Syslog receiver endpoint")
+	syslogReceiver  = flag.String("syslog-receiver", "127.0.0.1:51893", "Syslog receiver endpoint")
 	statsdReceiver  = flag.String("statsd-receiver", "127.0.0.1:9126", "StatsD receiver endpoint")
 )
 
