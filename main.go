@@ -1,12 +1,15 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"math/rand"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -27,7 +30,7 @@ import (
 var (
 	datadogReceiver = flag.String("datadog-receiver", "127.0.0.1:8126", "Datadog receiver endpoint")
 	httpReceiver    = flag.String("http-receiver", "127.0.0.1:4318", "OpenTelemetry HTTP receiver endpoint")
-	syslogReceiver  = flag.String("syslog-receiver", "127.0.0.1:51893", "Syslog receiver endpoint")
+	lokiReceiver    = flag.String("loki-receiver", "127.0.0.1:3100", "Loki receiver endpoint")
 	statsdReceiver  = flag.String("statsd-receiver", "127.0.0.1:9126", "StatsD receiver endpoint")
 )
 
@@ -109,8 +112,8 @@ func main() {
 			}
 
 			// Simulate log generation
-			if err := sendSyslogMessage(*syslogReceiver); err != nil {
-				log.Printf("Failed to send syslog message: %v", err)
+			if err := sendLokiMessage(*lokiReceiver); err != nil {
+				log.Printf("Failed to send Loki message: %v", err)
 			}
 
 			// Send StatsD metric
@@ -168,20 +171,49 @@ func sendTestDatadogMetric(client *datadogstatsd.Client) error {
 	return nil
 }
 
-func sendSyslogMessage(address string) error {
-	conn, err := net.Dial("tcp", address)
-	if err != nil {
-		return fmt.Errorf("failed to connect to syslog receiver: %w", err)
-	}
-	defer conn.Close()
+func sendLokiMessage(address string) error {
+	lokiURL := fmt.Sprintf("http://%s/loki/api/v1/push", address)
 
-	message := fmt.Sprintf("<34>1 %s otel-test-daemon 1234 - - - Test syslog message",
-		time.Now().Format(time.RFC3339))
-	_, err = fmt.Fprintln(conn, message)
-	if err != nil {
-		return fmt.Errorf("failed to send syslog message: %w", err)
+	timeStamp := time.Now().UnixNano()
+	logLine := "Test Loki message"
+
+	payload := map[string]interface{}{
+		"streams": []map[string]interface{}{
+			{
+				"stream": map[string]string{
+					"app":       "otel-test-daemon",
+					"log_level": "info",
+				},
+				"values": [][]interface{}{
+					{fmt.Sprintf("%d", timeStamp), logLine},
+				},
+			},
+		},
 	}
-	log.Println("Test syslog message sent to receiver", address)
+
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal payload: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", lokiURL, bytes.NewBuffer(payloadBytes))
+	if err != nil {
+		return fmt.Errorf("failed to create HTTP request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send HTTP request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected response from Loki: %s", resp.Status)
+	}
+
+	log.Println("Test Loki message sent to receiver", address)
 	return nil
 }
 
