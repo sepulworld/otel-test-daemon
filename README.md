@@ -4,14 +4,14 @@
 
 `otel-test-daemon` is a Go application that generates and sends test metrics, traces, and logs to various telemetry systems including Datadog, OpenTelemetry, Syslog, and StatsD. This project aims to simulate telemetry data for testing observability and monitoring setups.
 
-The application runs as a daemon, periodically generating telemetry data to configured endpoints. It uses OpenTelemetry for metrics and traces, and integrates with Datadog, StatsD, and Syslog.
+The application runs as a daemon, periodically generating telemetry data to configured endpoints. It uses OpenTelemetry for metrics and traces, and integrates with Datadog, StatsD, and Loki.
 
 ## Features
 
 - Sends telemetry data to multiple systems:
   - OpenTelemetry receiver (HTTP endpoint)
   - Datadog (via StatsD client)
-  - Syslog
+  - Loki API
   - StatsD receiver
 - Configurable through command-line flags.
 - Runs as a daemon, automatically generating telemetry data.
@@ -52,7 +52,7 @@ You can configure the receivers using command-line flags:
 ./otel-test-daemon \
   -datadog-receiver=169.254.1.1:8126 \
   -http-receiver=169.254.1.1:4318 \
-  -syslog-receiver=169.254.1.1:51893 \
+  -loki-receiver=169.254.1.1:3100 \
   -statsd-receiver=169.254.1.1:9126
 ```
 
@@ -84,7 +84,7 @@ The application can be configured via the following command-line flags:
 
 - `-datadog-receiver` (default: `169.254.1.1:8126`): Datadog receiver endpoint.
 - `-http-receiver` (default: `169.254.1.1:4318`): OpenTelemetry HTTP receiver endpoint.
-- `-syslog-receiver` (default: `169.254.1.1:51893`): Syslog receiver endpoint.
+- `-loki-receiver` (default: `169.254.1.1:3100`): Loki API receiver endpoint.
 - `-statsd-receiver` (default: `169.254.1.1:9126`): StatsD receiver endpoint.
 
 ## Development
