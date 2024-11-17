@@ -47,7 +47,6 @@ func main() {
 		os.Exit(0)
 	}()
 
-	// Setup OpenTelemetry Tracer
 	if !isPortOpen(*httpReceiver) {
 		log.Fatalf("HTTP receiver port is not open: %s", *httpReceiver)
 	}
