@@ -57,7 +57,7 @@ func main() {
 		log.Fatalf("Failed to create trace exporter: %v", err)
 	}
 	res, err := resource.New(context.Background(), resource.WithAttributes(
-		attribute.String("service1.name", "otel-test-daemon"),
+		attribute.String("service.name", "otel-test-daemon"),
 	))
 	if err != nil {
 		log.Fatalf("Failed to create resource: %v", err)
