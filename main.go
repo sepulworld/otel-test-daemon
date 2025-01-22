@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"log/syslog"
 	"math/rand"
 	"net"
 	"net/http"
@@ -28,10 +29,11 @@ import (
 )
 
 var (
-	datadogReceiver = flag.String("datadog-receiver", "127.0.0.1:8126", "Datadog receiver endpoint")
-	httpReceiver    = flag.String("http-receiver", "127.0.0.1:4318", "OpenTelemetry HTTP receiver endpoint")
-	lokiReceiver    = flag.String("loki-receiver", "127.0.0.1:3100", "Loki receiver endpoint")
-	statsdReceiver  = flag.String("statsd-receiver", "127.0.0.1:9126", "StatsD receiver endpoint")
+	datadogReceiver  = flag.String("datadog-receiver", "127.0.0.1:8126", "Datadog receiver endpoint")
+	httpReceiver     = flag.String("http-receiver", "127.0.0.1:4318", "OpenTelemetry HTTP receiver endpoint")
+	lokiReceiver     = flag.String("loki-receiver", "127.0.0.1:3100", "Loki receiver endpoint")
+	statsdReceiver   = flag.String("statsd-receiver", "127.0.0.1:9126", "StatsD receiver endpoint")
+	tcpSyslogAddress = flag.String("tcp-syslog", "127.0.0.1:51893", "TCP syslog receiver address")
 )
 
 func main() {
@@ -126,6 +128,30 @@ func main() {
 			}
 
 			// Wait for 5 seconds before sending the next batch of test data
+			time.Sleep(5 * time.Second)
+		}
+	}()
+
+	// Initialize syslog writer for TCP
+	tcpWriter, err := syslog.Dial("tcp", *tcpSyslogAddress, syslog.LOG_INFO, "otel-test-daemon")
+	if err != nil {
+		log.Fatalf("Failed to connect to TCP syslog: %v", err)
+	}
+	defer tcpWriter.Close()
+
+	// Start sending test log messages
+	go func() {
+		for {
+			message := fmt.Sprintf("Test syslog tcp message at %s", time.Now().Format(time.RFC3339))
+
+			// Send to TCP syslog
+			if err := tcpWriter.Info(message); err != nil {
+				log.Printf("Failed to send log to TCP syslog: %v", err)
+			} else {
+				log.Println("Log sent to TCP syslog")
+			}
+
+			// Wait for 5 seconds before sending the next message
 			time.Sleep(5 * time.Second)
 		}
 	}()
