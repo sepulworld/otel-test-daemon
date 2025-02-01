@@ -19,7 +19,7 @@ job "otel-test-daemon" {
       }
 
       resources {
-        cpu    = 55
+        cpu    = 56
         memory = 128
       }
 
