@@ -10,6 +10,7 @@ job "otel-test-daemon" {
 
       config {
         image = "ghcr.io/sepulworld/otel-test-daemon:latest"
+        force_pull = true
         args = [
           "-datadog-receiver=169.254.1.1:8126",
           "-http-receiver=169.254.1.1:4318",
