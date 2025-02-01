@@ -81,7 +81,7 @@ func main() {
 	otel.SetMeterProvider(meterProvider)
 	meter := meterProvider.Meter("otel-test-daemon-meter")
 
-	counter, err := meter.Int64Counter("test_counter", metrictype.WithDescription("A test counter metric"))
+	counter, err := meter.Int64Counter("otel_test_daemon_test1_counter", metrictype.WithDescription("A test counter metric"))
 	if err != nil {
 		log.Fatalf("Failed to create counter metric: %v", err)
 	}
