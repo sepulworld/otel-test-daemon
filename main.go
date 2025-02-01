@@ -70,12 +70,17 @@ func main() {
 	otel.SetTracerProvider(tracerProvider)
 	tracer := otel.Tracer("otel-test-daemon")
 
-	// Setup OpenTelemetry Metrics (using a basic stdout exporter for now)
-	meterProvider := metricsdk.NewMeterProvider()
+	metricExporter, err := otlpmetrichttp.New(context.Background(), otlpmetrichttp.WithEndpoint(*httpReceiver), otlpmetrichttp.WithInsecure())
+	if err != nil {
+		log.Fatalf("Failed to create metric exporter: %v", err)
+	}
+	meterProvider := metricsdk.NewMeterProvider(
+		metricsdk.WithReader(metricsdk.NewPeriodicReader(metricExporter)),
+		metricsdk.WithResource(res),
+	)
 	otel.SetMeterProvider(meterProvider)
-	meter := meterProvider.Meter("otel-test-daemon")
+	meter := meterProvider.Meter("otel-test-daemon-meter")
 
-	// Create a counter metric
 	counter, err := meter.Int64Counter("test_counter", metrictype.WithDescription("A test counter metric"))
 	if err != nil {
 		log.Fatalf("Failed to create counter metric: %v", err)
@@ -106,9 +111,7 @@ func main() {
 			}
 
 			// Send a metric
-			if err := sendTestMetric(counter, res); err != nil {
-				log.Printf("Failed to send metric: %v", err)
-			}
+			sendTestMetric(counter)
 
 			// Simulate log generation
 			if err := sendLokiMessage(*lokiReceiver); err != nil {
@@ -169,22 +172,10 @@ func sendTestTrace(tracer trace.Tracer) error {
 	return nil
 }
 
-func sendTestMetric(counter metrictype.Int64Counter, res *resource.Resource) error {
+func sendTestMetric(counter metrictype.Int64Counter) {
 	counter.Add(context.Background(), 1,
 		metrictype.WithAttributes(attribute.String("endpoint", *httpReceiver)))
-
-	metricExporter, err := otlpmetrichttp.New(context.Background(), otlpmetrichttp.WithEndpoint(*httpReceiver), otlpmetrichttp.WithInsecure())
-	if err != nil {
-		log.Fatalf("Failed to create metric exporter: %v", err)
-	}
-
-	meterProvider := metricsdk.NewMeterProvider(
-		metricsdk.WithReader(metricsdk.NewPeriodicReader(metricExporter)),
-		metricsdk.WithResource(res),
-	)
-	otel.SetMeterProvider(meterProvider)
 	log.Println("Test metric incremented")
-	return nil
 }
 
 func sendTestStatsdMetric(client cactusstatsd.Statter) error {
