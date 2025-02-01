@@ -20,6 +20,7 @@ import (
 	cactusstatsd "github.com/cactus/go-statsd-client/statsd"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	metrictype "go.opentelemetry.io/otel/metric"
 	metricsdk "go.opentelemetry.io/otel/sdk/metric"
@@ -75,10 +76,7 @@ func main() {
 	meter := meterProvider.Meter("otel-test-daemon")
 
 	// Create a counter metric
-	counter, err := meter.Float64Counter(
-		"test_counter",
-		metrictype.WithDescription("A test counter metric"),
-	)
+	counter, err := meter.Int64Counter("test_counter", metrictype.WithDescription("A test counter metric"))
 	if err != nil {
 		log.Fatalf("Failed to create counter metric: %v", err)
 	}
@@ -108,7 +106,7 @@ func main() {
 			}
 
 			// Send a metric
-			if err := sendTestMetric(counter); err != nil {
+			if err := sendTestMetric(counter, res); err != nil {
 				log.Printf("Failed to send metric: %v", err)
 			}
 
@@ -171,10 +169,21 @@ func sendTestTrace(tracer trace.Tracer) error {
 	return nil
 }
 
-func sendTestMetric(counter metrictype.Float64Counter) error {
-	counter.Add(context.Background(), rand.Float64(),
+func sendTestMetric(counter metrictype.Int64Counter, res *resource.Resource) error {
+	counter.Add(context.Background(), 1,
 		metrictype.WithAttributes(attribute.String("endpoint", *httpReceiver)))
-	log.Println("Test metric sent to HTTP receiver", *httpReceiver)
+
+	metricExporter, err := otlpmetrichttp.New(context.Background(), otlpmetrichttp.WithEndpoint(*httpReceiver), otlpmetrichttp.WithInsecure())
+	if err != nil {
+		log.Fatalf("Failed to create metric exporter: %v", err)
+	}
+
+	meterProvider := metricsdk.NewMeterProvider(
+		metricsdk.WithReader(metricsdk.NewPeriodicReader(metricExporter)),
+		metricsdk.WithResource(res),
+	)
+	otel.SetMeterProvider(meterProvider)
+	log.Println("Test metric incremented")
 	return nil
 }
 
